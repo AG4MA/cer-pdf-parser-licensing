@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password_hash String
+  created_at    DateTime @default(now())
+
+  @@map("admin_users")
+}
+
+model License {
+  id          String   @id @default(cuid())
+  license_key String   @unique
+  label       String   @default("")
+  enabled     Boolean  @default(true)
+  notes       String   @default("")
+  created_at  DateTime @default(now())
+
+  devices Device[]
+
+  @@map("licenses")
+}
+
+model Device {
+  id            String   @id @default(cuid())
+  device_id     String
+  license_id    String
+  first_seen_at DateTime @default(now())
+  last_seen_at  DateTime @default(now())
+  os            String   @default("")
+  app_version   String   @default("")
+  hostname      String   @default("")
+  enabled       Boolean  @default(true)
+
+  license License @relation(fields: [license_id], references: [id], onDelete: Cascade)
+
+  @@unique([device_id, license_id])
+  @@map("devices")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  event_type   String
+  payload_json String
+  created_at   DateTime @default(now())
+
+  @@map("audit_logs")
+}

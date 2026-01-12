@@ -1,0 +1,70 @@
+<% layout('layout', { title: it.title, csrfToken: it.csrfToken, userId: true, currentPath: 'licenses' }) %>
+
+<div class="page-header">
+  <h1>Licenses</h1>
+  <form action="/admin/licenses" method="POST" class="inline-form">
+    <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+    <input type="text" name="label" placeholder="License label (optional)" class="input-inline">
+    <button type="submit" class="btn btn-primary">+ Create License</button>
+  </form>
+</div>
+
+<% if (it.success) { %>
+<div class="alert alert-success">
+  <% if (it.success === 'created') { %>
+    License created successfully!
+  <% } else if (it.success === 'toggled') { %>
+    License status updated!
+  <% } else if (it.success === 'deleted') { %>
+    License deleted!
+  <% } else { %>
+    Operation successful!
+  <% } %>
+</div>
+<% } %>
+
+<div class="table-container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>License Key</th>
+        <th>Label</th>
+        <th>Devices</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (it.licenses.length === 0) { %>
+      <tr>
+        <td colspan="6" class="text-center text-muted">No licenses found. Create your first license above.</td>
+      </tr>
+      <% } %>
+      <% it.licenses.forEach(function(license) { %>
+      <tr>
+        <td>
+          <span class="badge <%= license.enabled ? 'badge-success' : 'badge-danger' %>">
+            <%= license.enabled ? 'Enabled' : 'Disabled' %>
+          </span>
+        </td>
+        <td>
+          <code class="license-key"><%= license.license_key %></code>
+        </td>
+        <td><%= license.label || '-' %></td>
+        <td><%= license._count.devices %></td>
+        <td><%= new Date(license.created_at).toLocaleDateString() %></td>
+        <td class="actions">
+          <a href="/admin/licenses/<%= license.id %>" class="btn btn-sm btn-outline">View</a>
+          <form action="/admin/licenses/<%= license.id %>/toggle" method="POST" class="inline-form">
+            <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+            <button type="submit" class="btn btn-sm <%= license.enabled ? 'btn-warning' : 'btn-success' %>">
+              <%= license.enabled ? 'Disable' : 'Enable' %>
+            </button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>

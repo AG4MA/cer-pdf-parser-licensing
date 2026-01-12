@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: License Manager API - Devices
+  description: API endpoints for desktop application device activation and ping
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+
+paths:
+  /devices/activate:
+    post:
+      summary: Activate a device
+      description: |
+        Activates a device for a given license. If the device doesn't exist, it will be created.
+        Returns policy information including offline grace period.
+      operationId: activateDevice
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivateRequest'
+            example:
+              license_key: "LIC-ABCDEF1234567890"
+              device_id: "unique-device-uuid-here"
+              device_info:
+                os: "Windows 11"
+                app_version: "1.0.0"
+                hostname: "WORKSTATION-01"
+      responses:
+        '200':
+          description: Activation result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ActivateSuccessResponse'
+                  - $ref: '#/components/schemas/DeniedResponse'
+              examples:
+                success:
+                  summary: Successful activation
+                  value:
+                    allow: true
+                    policy:
+                      offline_grace_days: 7
+                    server_time: "2026-01-12T10:30:00.000Z"
+                license_disabled:
+                  summary: License disabled or not found
+                  value:
+                    allow: false
+                    reason: "LICENSE_DISABLED"
+                device_disabled:
+                  summary: Device disabled
+                  value:
+                    allow: false
+                    reason: "DEVICE_DISABLED"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalErrorResponse'
+
+  /devices/ping:
+    post:
+      summary: Ping from a device
+      description: |
+        Heartbeat ping from a device to verify license is still active and update last seen timestamp.
+        Should be called periodically by the desktop application.
+      operationId: pingDevice
+      tags:
+        - Devices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PingRequest'
+            example:
+              license_key: "LIC-ABCDEF1234567890"
+              device_id: "unique-device-uuid-here"
+              device_info:
+                os: "Windows 11"
+                app_version: "1.0.1"
+                hostname: "WORKSTATION-01"
+      responses:
+        '200':
+          description: Ping result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PingSuccessResponse'
+                  - $ref: '#/components/schemas/DeniedResponse'
+              examples:
+                success:
+                  summary: Successful ping
+                  value:
+                    allow: true
+                license_disabled:
+                  summary: License disabled or not found
+                  value:
+                    allow: false
+                    reason: "LICENSE_DISABLED"
+                device_disabled:
+                  summary: Device disabled
+                  value:
+                    allow: false
+                    reason: "DEVICE_DISABLED"
+                device_not_found:
+                  summary: Device not registered
+                  value:
+                    allow: false
+                    reason: "DEVICE_NOT_FOUND"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalErrorResponse'
+
+components:
+  schemas:
+    DeviceInfo:
+      type: object
+      properties:
+        os:
+          type: string
+          description: Operating system name and version
+          maxLength: 100
+          example: "Windows 11"
+        app_version:
+          type: string
+          description: Application version
+          maxLength: 50
+          example: "1.0.0"
+        hostname:
+          type: string
+          description: Device hostname
+          maxLength: 255
+          example: "WORKSTATION-01"
+
+    ActivateRequest:
+      type: object
+      required:
+        - license_key
+        - device_id
+      properties:
+        license_key:
+          type: string
+          description: The license key to activate
+          minLength: 1
+          maxLength: 100
+          example: "LIC-ABCDEF1234567890"
+        device_id:
+          type: string
+          description: Unique identifier for the device (e.g., hardware ID, UUID)
+          minLength: 1
+          maxLength: 255
+          example: "unique-device-uuid-here"
+        device_info:
+          $ref: '#/components/schemas/DeviceInfo'
+
+    PingRequest:
+      type: object
+      required:
+        - license_key
+        - device_id
+      properties:
+        license_key:
+          type: string
+          description: The license key
+          minLength: 1
+          maxLength: 100
+          example: "LIC-ABCDEF1234567890"
+        device_id:
+          type: string
+          description: Unique identifier for the device
+          minLength: 1
+          maxLength: 255
+          example: "unique-device-uuid-here"
+        device_info:
+          $ref: '#/components/schemas/DeviceInfo'
+
+    ActivateSuccessResponse:
+      type: object
+      required:
+        - allow
+        - policy
+        - server_time
+      properties:
+        allow:
+          type: boolean
+          enum: [true]
+          description: Whether the device is allowed
+        policy:
+          type: object
+          required:
+            - offline_grace_days
+          properties:
+            offline_grace_days:
+              type: integer
+              description: Number of days the app can work offline
+              example: 7
+        server_time:
+          type: string
+          format: date-time
+          description: Current server timestamp (ISO 8601)
+          example: "2026-01-12T10:30:00.000Z"
+
+    PingSuccessResponse:
+      type: object
+      required:
+        - allow
+      properties:
+        allow:
+          type: boolean
+          enum: [true]
+          description: Whether the device is allowed
+
+    DeniedResponse:
+      type: object
+      required:
+        - allow
+        - reason
+      properties:
+        allow:
+          type: boolean
+          enum: [false]
+          description: Access denied
+        reason:
+          type: string
+          enum:
+            - LICENSE_DISABLED
+            - DEVICE_DISABLED
+            - DEVICE_NOT_FOUND
+          description: Reason for denial
+
+    ValidationErrorResponse:
+      type: object
+      required:
+        - allow
+        - reason
+      properties:
+        allow:
+          type: boolean
+          enum: [false]
+        reason:
+          type: string
+          enum: [INVALID_REQUEST]
+        errors:
+          type: object
+          description: Field-level validation errors
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    InternalErrorResponse:
+      type: object
+      required:
+        - allow
+        - reason
+      properties:
+        allow:
+          type: boolean
+          enum: [false]
+        reason:
+          type: string
+          enum: [INTERNAL_ERROR]
+
+tags:
+  - name: Devices
+    description: Device activation and heartbeat endpoints

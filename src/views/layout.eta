@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= it.title %> | License Manager</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <% if (it.userId) { %>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="/admin/licenses">🔐 License Manager</a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/admin/licenses" class="<%= it.currentPath === 'licenses' ? 'active' : '' %>">Licenses</a></li>
+      <li><a href="/admin/devices" class="<%= it.currentPath === 'devices' ? 'active' : '' %>">Devices</a></li>
+      <li><a href="/admin/audit" class="<%= it.currentPath === 'audit' ? 'active' : '' %>">Audit Log</a></li>
+    </ul>
+    <form action="/logout" method="POST" class="nav-logout">
+      <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+      <button type="submit" class="btn btn-sm btn-outline">Logout</button>
+    </form>
+  </nav>
+  <% } %>
+  
+  <main class="container">
+    <%~ it.body %>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; <%= new Date().getFullYear() %> License Manager</p>
+  </footer>
+</body>
+</html>
