@@ -1,61 +1,91 @@
-<% layout('layout', { title: it.title, csrfToken: it.csrfToken, userId: true, currentPath: 'audit' }) %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= it.title %> | License Manager</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="/admin/licenses">🔐 License Manager</a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/admin/licenses">Licenses</a></li>
+      <li><a href="/admin/devices">Devices</a></li>
+      <li><a href="/admin/audit" class="active">Audit Log</a></li>
+    </ul>
+    <form action="/logout" method="POST" class="nav-logout">
+      <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+      <button type="submit" class="btn btn-sm btn-outline">Logout</button>
+    </form>
+  </nav>
+  
+  <main class="container">
+    <div class="page-header">
+      <h1>Audit Log</h1>
+      <span class="text-muted">Total: <%= it.pagination.totalCount %> entries</span>
+    </div>
 
-<div class="page-header">
-  <h1>Audit Log</h1>
-  <span class="text-muted">Total: <%= it.pagination.totalCount %> entries</span>
-</div>
+    <div class="table-container">
+      <table class="table table-compact">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Event Type</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (it.logs.length === 0) { %>
+          <tr>
+            <td colspan="3" class="text-center text-muted">No audit logs found.</td>
+          </tr>
+          <% } %>
+          <% it.logs.forEach(function(log) { %>
+          <tr>
+            <td class="nowrap"><%= new Date(log.created_at).toLocaleString() %></td>
+            <td>
+              <span class="badge 
+                <%= log.event_type.includes('SUCCESS') ? 'badge-success' : '' %>
+                <%= log.event_type.includes('DENIED') ? 'badge-danger' : '' %>
+                <%= log.event_type.includes('CREATED') ? 'badge-info' : '' %>
+              ">
+                <%= log.event_type %>
+              </span>
+            </td>
+            <td>
+              <details class="audit-details">
+                <summary>View payload</summary>
+                <pre class="code-block"><%= JSON.stringify(log.payload, null, 2) %></pre>
+              </details>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
 
-<div class="table-container">
-  <table class="table table-compact">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Event Type</th>
-        <th>Details</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (it.logs.length === 0) { %>
-      <tr>
-        <td colspan="3" class="text-center text-muted">No audit logs found.</td>
-      </tr>
+    <% if (it.pagination.totalPages > 1) { %>
+    <div class="pagination">
+      <% if (it.pagination.hasPrev) { %>
+      <a href="/admin/audit?page=<%= it.pagination.currentPage - 1 %>" class="btn btn-sm btn-outline">← Previous</a>
       <% } %>
-      <% it.logs.forEach(function(log) { %>
-      <tr>
-        <td class="nowrap"><%= new Date(log.created_at).toLocaleString() %></td>
-        <td>
-          <span class="badge 
-            <%= log.event_type.includes('SUCCESS') ? 'badge-success' : '' %>
-            <%= log.event_type.includes('DENIED') ? 'badge-danger' : '' %>
-            <%= log.event_type.includes('CREATED') ? 'badge-info' : '' %>
-          ">
-            <%= log.event_type %>
-          </span>
-        </td>
-        <td>
-          <details class="audit-details">
-            <summary>View payload</summary>
-            <pre class="code-block"><%= JSON.stringify(log.payload, null, 2) %></pre>
-          </details>
-        </td>
-      </tr>
-      <% }); %>
-    </tbody>
-  </table>
-</div>
+      
+      <span class="pagination-info">
+        Page <%= it.pagination.currentPage %> of <%= it.pagination.totalPages %>
+      </span>
+      
+      <% if (it.pagination.hasNext) { %>
+      <a href="/admin/audit?page=<%= it.pagination.currentPage + 1 %>" class="btn btn-sm btn-outline">Next →</a>
+      <% } %>
+    </div>
+    <% } %>
+  </main>
 
-<% if (it.pagination.totalPages > 1) { %>
-<div class="pagination">
-  <% if (it.pagination.hasPrev) { %>
-  <a href="/admin/audit?page=<%= it.pagination.currentPage - 1 %>" class="btn btn-sm btn-outline">← Previous</a>
-  <% } %>
-  
-  <span class="pagination-info">
-    Page <%= it.pagination.currentPage %> of <%= it.pagination.totalPages %>
-  </span>
-  
-  <% if (it.pagination.hasNext) { %>
-  <a href="/admin/audit?page=<%= it.pagination.currentPage + 1 %>" class="btn btn-sm btn-outline">Next →</a>
-  <% } %>
-</div>
-<% } %>
+  <footer class="footer">
+    <p>&copy; <%= new Date().getFullYear() %> License Manager</p>
+  </footer>
+</body>
+</html>

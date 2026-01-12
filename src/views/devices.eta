@@ -1,102 +1,132 @@
-<% layout('layout', { title: it.title, csrfToken: it.csrfToken, userId: true, currentPath: 'devices' }) %>
-
-<div class="page-header">
-  <h1>Devices</h1>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <h2>Filters</h2>
-  </div>
-  <div class="card-body">
-    <form action="/admin/devices" method="GET" class="filter-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="license_key">License Key</label>
-          <input 
-            type="text" 
-            id="license_key" 
-            name="license_key" 
-            value="<%= it.filters?.license_key || '' %>"
-            placeholder="Enter license key"
-          >
-        </div>
-        <div class="form-group">
-          <label for="os">OS</label>
-          <input 
-            type="text" 
-            id="os" 
-            name="os" 
-            value="<%= it.filters?.os || '' %>"
-            placeholder="e.g. Windows"
-          >
-        </div>
-        <div class="form-group">
-          <label for="app_version">App Version</label>
-          <input 
-            type="text" 
-            id="app_version" 
-            name="app_version" 
-            value="<%= it.filters?.app_version || '' %>"
-            placeholder="e.g. 1.0.0"
-          >
-        </div>
-        <div class="form-group form-actions">
-          <button type="submit" class="btn btn-primary">Filter</button>
-          <a href="/admin/devices" class="btn btn-outline">Clear</a>
-        </div>
-      </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= it.title %> | License Manager</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="/admin/licenses">🔐 License Manager</a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/admin/licenses">Licenses</a></li>
+      <li><a href="/admin/devices" class="active">Devices</a></li>
+      <li><a href="/admin/audit">Audit Log</a></li>
+    </ul>
+    <form action="/logout" method="POST" class="nav-logout">
+      <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+      <button type="submit" class="btn btn-sm btn-outline">Logout</button>
     </form>
-  </div>
-</div>
+  </nav>
+  
+  <main class="container">
+    <div class="page-header">
+      <h1>Devices</h1>
+    </div>
 
-<div class="table-container">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Status</th>
-        <th>Device ID</th>
-        <th>License</th>
-        <th>Hostname</th>
-        <th>OS</th>
-        <th>App Version</th>
-        <th>Last Seen</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (it.devices.length === 0) { %>
-      <tr>
-        <td colspan="8" class="text-center text-muted">No devices found.</td>
-      </tr>
-      <% } %>
-      <% it.devices.forEach(function(device) { %>
-      <tr>
-        <td>
-          <span class="badge <%= device.enabled ? 'badge-success' : 'badge-danger' %>">
-            <%= device.enabled ? 'Enabled' : 'Disabled' %>
-          </span>
-        </td>
-        <td><code title="<%= device.device_id %>"><%= device.device_id.substring(0, 16) %>...</code></td>
-        <td>
-          <a href="/admin/licenses/<%= device.license_id %>">
-            <%= device.license?.label || device.license?.license_key?.substring(0, 20) + '...' %>
-          </a>
-        </td>
-        <td><%= device.hostname || '-' %></td>
-        <td><%= device.os || '-' %></td>
-        <td><%= device.app_version || '-' %></td>
-        <td><%= new Date(device.last_seen_at).toLocaleString() %></td>
-        <td>
-          <form action="/admin/devices/<%= device.id %>/toggle" method="POST" class="inline-form">
-            <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
-            <button type="submit" class="btn btn-sm <%= device.enabled ? 'btn-warning' : 'btn-success' %>">
-              <%= device.enabled ? 'Disable' : 'Enable' %>
-            </button>
-          </form>
-        </td>
-      </tr>
-      <% }); %>
-    </tbody>
-  </table>
-</div>
+    <div class="card">
+      <div class="card-header">
+        <h2>Filters</h2>
+      </div>
+      <div class="card-body">
+        <form action="/admin/devices" method="GET" class="filter-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="license_key">License Key</label>
+              <input 
+                type="text" 
+                id="license_key" 
+                name="license_key" 
+                value="<%= it.filters?.license_key || '' %>"
+                placeholder="Enter license key"
+              >
+            </div>
+            <div class="form-group">
+              <label for="os">OS</label>
+              <input 
+                type="text" 
+                id="os" 
+                name="os" 
+                value="<%= it.filters?.os || '' %>"
+                placeholder="e.g. Windows"
+              >
+            </div>
+            <div class="form-group">
+              <label for="app_version">App Version</label>
+              <input 
+                type="text" 
+                id="app_version" 
+                name="app_version" 
+                value="<%= it.filters?.app_version || '' %>"
+                placeholder="e.g. 1.0.0"
+              >
+            </div>
+            <div class="form-group form-actions">
+              <button type="submit" class="btn btn-primary">Filter</button>
+              <a href="/admin/devices" class="btn btn-outline">Clear</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Device ID</th>
+            <th>License</th>
+            <th>Hostname</th>
+            <th>OS</th>
+            <th>App Version</th>
+            <th>Last Seen</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (it.devices.length === 0) { %>
+          <tr>
+            <td colspan="8" class="text-center text-muted">No devices found.</td>
+          </tr>
+          <% } %>
+          <% it.devices.forEach(function(device) { %>
+          <tr>
+            <td>
+              <span class="badge <%= device.enabled ? 'badge-success' : 'badge-danger' %>">
+                <%= device.enabled ? 'Enabled' : 'Disabled' %>
+              </span>
+            </td>
+            <td><code title="<%= device.device_id %>"><%= device.device_id.length > 16 ? device.device_id.substring(0, 16) + '...' : device.device_id %></code></td>
+            <td>
+              <a href="/admin/licenses/<%= device.license_id %>">
+                <%= device.license?.label || (device.license?.license_key ? device.license.license_key.substring(0, 20) + '...' : '-') %>
+              </a>
+            </td>
+            <td><%= device.hostname || '-' %></td>
+            <td><%= device.os || '-' %></td>
+            <td><%= device.app_version || '-' %></td>
+            <td><%= new Date(device.last_seen_at).toLocaleString() %></td>
+            <td>
+              <form action="/admin/devices/<%= device.id %>/toggle" method="POST" class="inline-form">
+                <input type="hidden" name="csrf_token" value="<%= it.csrfToken %>">
+                <button type="submit" class="btn btn-sm <%= device.enabled ? 'btn-warning' : 'btn-success' %>">
+                  <%= device.enabled ? 'Disable' : 'Enable' %>
+                </button>
+              </form>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; <%= new Date().getFullYear() %> License Manager</p>
+  </footer>
+</body>
+</html>

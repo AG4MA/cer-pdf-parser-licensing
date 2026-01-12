@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { AuditLog } from '@prisma/client';
 import { prisma } from '../db.js';
 import { requireAuth } from './auth.js';
 
@@ -26,7 +27,7 @@ export async function adminAuditRoutes(fastify: FastifyInstance) {
     });
 
     // Parse JSON payloads for display
-    const logsWithParsedPayload = logs.map((log) => {
+    const logsWithParsedPayload = logs.map((log: AuditLog) => {
       let payload: Record<string, unknown> = {};
       try {
         payload = JSON.parse(log.payload_json);

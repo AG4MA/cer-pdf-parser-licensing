@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'path';
 import fs from 'fs';
-import Fastify from 'fastify';
+import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import fastifySession from '@fastify/session';
 import fastifyFormbody from '@fastify/formbody';
@@ -106,7 +106,7 @@ async function bootstrap() {
 
   // Decorate request with CSRF helper
   fastify.decorateRequest('csrfToken', null);
-  fastify.addHook('preHandler', async (request) => {
+  fastify.addHook('preHandler', async (request: FastifyRequest) => {
     if (!request.session.csrfToken) {
       const { nanoid } = await import('nanoid');
       request.session.csrfToken = nanoid(32);
@@ -121,7 +121,7 @@ async function bootstrap() {
   await fastify.register(adminAuditRoutes, { prefix: '/admin/audit' });
 
   // Root redirect
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     if (request.session.userId) {
       return reply.redirect('/admin/licenses');
     }
