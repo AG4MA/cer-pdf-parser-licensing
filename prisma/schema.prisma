@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTH ====================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ==================== APPLICATIONS ====================
+
+model Application {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  versions    AppVersion[]
+  heartbeats  Heartbeat[]
+  feedbacks   Feedback[]
+}
+
+model AppVersion {
+  id          String   @id @default(cuid())
+  appId       String
+  version     String
+  fileName    String
+  fileSize    Int
+  filePath    String
+  changelog   String?
+  downloads   Int      @default(0)
+  isLatest    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  app         Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  
+  @@unique([appId, version])
+}
+
+// ==================== HEARTBEAT / ONLINE STATUS ====================
+
+model Heartbeat {
+  id        String   @id @default(cuid())
+  appId     String
+  deviceId  String
+  hostname  String?
+  ip        String?
+  version   String?
+  os        String?
+  createdAt DateTime @default(now())
+  
+  app       Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  
+  @@index([appId, deviceId])
+  @@index([createdAt])
+}
+
+// ==================== FEEDBACK ====================
+
+model Feedback {
+  id        String   @id @default(cuid())
+  appId     String
+  deviceId  String?
+  userName  String?
+  email     String?
+  message   String
+  type      String   @default("general") // bug, feature, general
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  app       Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  
+  @@index([appId])
+  @@index([createdAt])
+  @@index([isRead])
+}
